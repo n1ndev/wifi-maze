@@ -2,28 +2,29 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>My Product Control</title>
+    <title>QT Py Local Controller</title>
   </head>
   <body>
-    <h1>My Product Control Page</h1>
+    <h1>QT Py Local Controller</h1>
     <p>Enter a command to send to your device:</p>
     <input type="text" id="commandInput" placeholder="Enter command">
     <button id="sendCommandButton">Send Command</button>
     <pre id="responseOutput"></pre>
 
     <script>
-      // In a real application, retrieve the token securely after login.
-      const SECRET_TOKEN = "MY_SECRET_TOKEN"; 
+      // In a production system, you would securely obtain the token
+      const SECRET_TOKEN = "MY_SECRET_TOKEN";
 
       document.getElementById("sendCommandButton").addEventListener("click", async () => {
         const cmd = document.getElementById("commandInput").value;
-        // Access the device via its mDNS hostname
+        // Build the URL with command and token parameters.
+        // The device is accessed via its mDNS name: qtpy.local.
         const url = "http://qtpy.local/command?cmd=" + encodeURIComponent(cmd) +
                     "&token=" + encodeURIComponent(SECRET_TOKEN);
         try {
           const response = await fetch(url);
           const text = await response.text();
-          document.getElementById("responseOutput").innerText = text;
+          document.getElementById("responseOutput").innerText = "Response: " + text;
         } catch (error) {
           document.getElementById("responseOutput").innerText = "Error: " + error;
         }
