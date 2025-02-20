@@ -12,13 +12,13 @@
     <pre id="responseOutput"></pre>
 
     <script>
-      // In a production system, you would securely obtain the token
+      // In production, the token should be provided securely after authentication.
       const SECRET_TOKEN = "MY_SECRET_TOKEN";
 
       document.getElementById("sendCommandButton").addEventListener("click", async () => {
         const cmd = document.getElementById("commandInput").value;
-        // Build the URL with command and token parameters.
-        // The device is accessed via its mDNS name: qtpy.local.
+        // Build the URL using the mDNS hostname. Note: since this is HTTP (not HTTPS),
+        // Chrome will trigger a private network access prompt when requested from an HTTPS origin.
         const url = "http://qtpy.local/command?cmd=" + encodeURIComponent(cmd) +
                     "&token=" + encodeURIComponent(SECRET_TOKEN);
         try {
