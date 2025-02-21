@@ -3,48 +3,65 @@
 #include <WebServer.h>
 
 // Replace with your WiFi credentials
-const char* ssid = "your_network_ssid";
-const char* password = "your_network_password";
+const char* ssid = "network";
+const char* password = "password";
 
-// mDNS hostname – the device will be accessible as http://qtpy.local
+// mDNS hostname – device will be accessible as http://qtpy.local
 const char* hostname = "qtpy";
 
-// Pre-shared secret token for authentication
-const char* SECRET_TOKEN = "MY_SECRET_TOKEN";
+// Create a global variable to store the device's MAC address
+String deviceMac;
 
 // Create a web server on port 80
 WebServer server(80);
 
+// Helper function to add required headers for CORS and Private Network Access
+void addCORSHeaders() {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.sendHeader("Access-Control-Allow-Private-Network", "true");
+  server.sendHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  server.sendHeader("Access-Control-Allow-Headers", "*");
+  
+  // New headers required by the PNA proposal:
+  server.sendHeader("Private-Network-Access-Name", "qtpy");
+  // Use the device's MAC address as the ID header.
+  server.sendHeader("Private-Network-Access-ID", deviceMac);
+}
+
+// Handler for OPTIONS preflight requests
+void handleOptions() {
+  addCORSHeaders();
+  server.send(200, "text/plain", "");
+}
+
 // Handler for the root URL (for testing)
 void handleRoot() {
-  server.sendHeader("Access-Control-Allow-Origin", "*");
+  addCORSHeaders();
   server.send(200, "text/plain", "Hello from QT Py S3");
 }
 
 // Handler for /command endpoint: expects "cmd" and "token" parameters.
 void handleCommand() {
-  // Check for token
+  addCORSHeaders();
+  
+  // Check for token parameter
   if (!server.hasArg("token")) {
-    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(401, "text/plain", "Token required");
     return;
   }
   String token = server.arg("token");
-  if (token != SECRET_TOKEN) {
-    server.sendHeader("Access-Control-Allow-Origin", "*");
+  if (token != "MY_SECRET_TOKEN") {  // Replace with your actual secret token
     server.send(403, "text/plain", "Invalid token");
     return;
   }
   
-  // Process command if provided
+  // Process the command parameter
   if (server.hasArg("cmd")) {
     String cmd = server.arg("cmd");
     Serial.print("Received command: ");
     Serial.println(cmd);
-    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(200, "text/plain", "Command received: " + cmd);
   } else {
-    server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(400, "text/plain", "No command received");
   }
 }
@@ -64,6 +81,11 @@ void setup() {
   Serial.print("Connected. IP: ");
   Serial.println(WiFi.localIP());
   
+  // Store the device's MAC address in the global variable
+  deviceMac = WiFi.macAddress();
+  Serial.print("Device MAC Address: ");
+  Serial.println(deviceMac);
+  
   // Start mDNS so the device is reachable as "qtpy.local"
   if (!MDNS.begin(hostname)) {
     Serial.println("Error starting mDNS");
@@ -73,9 +95,12 @@ void setup() {
   Serial.print(hostname);
   Serial.println(".local");
   
-  // Define HTTP server routes
+  // Define HTTP server routes and handle OPTIONS preflight requests
   server.on("/", HTTP_GET, handleRoot);
+  server.on("/", HTTP_OPTIONS, handleOptions);
+  
   server.on("/command", HTTP_GET, handleCommand);
+  server.on("/command", HTTP_OPTIONS, handleOptions);
   
   server.begin();
   Serial.println("HTTP server started");
