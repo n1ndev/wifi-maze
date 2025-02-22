@@ -2,25 +2,32 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Private Network Fetch Test</title>
+    <title>QT Py Local Controller with Token</title>
   </head>
   <body>
-    <h1>Test Private Network Access</h1>
-    <button id="fetchButton">Ping Device</button>
-    <pre id="output"></pre>
+    <h1>QT Py Local Controller with Token</h1>
+    <p>Enter a command to send to your device:</p>
+    <input type="text" id="commandInput" placeholder="Enter command">
+    <button id="sendCommandButton">Send Command</button>
+    <pre id="responseOutput"></pre>
 
     <script>
-      document.getElementById("fetchButton").addEventListener("click", async () => {
-        const url = "http://qtpy.local/ping";
+      // Secret token must match the one in the Arduino sketch.
+      const SECRET_TOKEN = "MY_SECRET_TOKEN";
+
+      document.getElementById("sendCommandButton").addEventListener("click", async () => {
+        const cmd = document.getElementById("commandInput").value;
+        // Build the URL with both cmd and token parameters.
+        const url = "http://qtpy.local/command?cmd=" + encodeURIComponent(cmd) +
+                    "&token=" + encodeURIComponent(SECRET_TOKEN);
         try {
           const response = await fetch(url, {
-            // New fetch option that informs the browser that the target is in the private address space
             targetAddressSpace: "private"
           });
           const text = await response.text();
-          document.getElementById("output").textContent = "Response: " + text;
+          document.getElementById("responseOutput").textContent = "Response: " + text;
         } catch (error) {
-          document.getElementById("output").textContent = "Error: " + error;
+          document.getElementById("responseOutput").textContent = "Error: " + error;
         }
       });
     </script>
